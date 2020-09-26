@@ -1,0 +1,95 @@
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const User = require('../models/user');
+const BadRequestError = require('../errors/BadRequestError');
+const NotFoundError = require('../errors/NotFoundError');
+const TokenError = require('../errors/TokenError');
+
+module.exports.getAllUsers = (req, res, next) => {
+  User.find({})
+    .then((users) => res.send({ data: users }))
+    .catch(next);
+};
+
+module.exports.getUser = (req, res, next) => {
+  User.findById(req.params._id)
+    .orFail()
+    .catch(() => {
+      throw new NotFoundError({ message: `Пользователь с идентификатором ${req.params.id} не найден` });
+    })
+    .then((user) => res.send({ data: user }))
+    .catch(next);
+};
+
+module.exports.createUser = (req, res, next) => {
+  bcrypt.hash(req.body.password, 10)
+    .then((hash) => User.create({
+      name: req.body.name,
+      avatar: req.body.avatar,
+      about: req.body.about,
+      email: req.body.email,
+      password: hash,
+    }))
+    .catch((err) => {
+      throw new BadRequestError({ message: `Запрос некорректен: ${err.message}` });
+    })
+    .then((user) => res.send({ data: user }))
+    .catch(next);
+};
+
+module.exports.updateUser = (req, res, next) => {
+  const { name, about } = req.body;
+
+  User.findByIdAndUpdate(req.user._id,
+    { name, about },
+    {
+      new: true,
+      runValidators: true,
+    })
+    .orFail()
+    .catch((err) => {
+      if (err instanceof NotFoundError) {
+        throw err;
+      }
+      throw new BadRequestError({ message: `Запрос некорректен: ${err.message}` });
+    })
+    .then((updatedUser) => res.send({ data: updatedUser }))
+    .catch(next);
+};
+
+module.exports.updateAvatar = (req, res, next) => {
+  const { avatar } = req.body;
+
+  User.findByIdAndUpdate(req.user._id,
+    { avatar },
+    {
+      new: true,
+      runValidators: true,
+    })
+    .orFail()
+    .catch((err) => {
+      if (err instanceof NotFoundError) {
+        throw err;
+      }
+      throw new BadRequestError({ message: `Запрос некорректен: ${err.message}` });
+    })
+    .then((updatedAvatar) => res.send({ data: updatedAvatar }))
+    .catch(next);
+};
+
+module.exports.login = (req, res, next) => {
+  const { email, password } = req.body;
+  return User.findUserByCredentials(email, password)
+    .catch(() => {
+      throw new TokenError({ message: `Пользователь с идентификатором ${req.params.id} не найден` });
+    })
+    .then((user) => {
+      const token = jwt.sign(
+        { _id: user._id },
+        'some-secret-key',
+        { expiresIn: '7d' },
+      );
+      res.send({ token });
+    })
+    .catch(next);
+};
