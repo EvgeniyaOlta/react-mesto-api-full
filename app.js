@@ -1,8 +1,10 @@
 const express = require('express');
 
+const bodyParser = require('body-parser');
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 const app = express();
 const mongoose = require('mongoose');
-const bodyParser = require('body-parser');
 const { celebrate, Joi } = require('celebrate');
 const { errors } = require('celebrate');
 const {
@@ -14,6 +16,8 @@ const auth = require('./middlewares/auth');
 const { requestLogger, errorLogger } = require('./middlewares/logger');
 
 const { PORT = 3000 } = process.env;
+
+
 
 mongoose.connect('mongodb://localhost:27017/mestodb', {
   useNewUrlParser: true,
@@ -51,8 +55,6 @@ app.post('/signup', celebrate({
 
 app.use(auth);
 
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/users', usersRouter);
 app.use('/cards', cardsRouter);
 
@@ -67,11 +69,11 @@ app.use((req, res) => {
 });
 
 app.use((err, req, res, next) => {
-  if (err.status !== '500') {
-    res.status(err.status).send(err.message);
+  if (err.status === '500' || err.status === undefined) {
+    res.status(500).send({ message: `На сервере произошла ошибка: ${err.message}` });
     return;
   }
-  res.status(500).send({ message: `На сервере произошла ошибка: ${err.message}` });
+  res.status(err.status).send(err.message);
   next();
 });
 
