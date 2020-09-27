@@ -24,9 +24,6 @@ module.exports.getUser = (req, res, next) => {
 module.exports.createUser = (req, res, next) => {
   bcrypt.hash(req.body.password, 10)
     .then((hash) => User.create({
-      name: req.body.name,
-      avatar: req.body.avatar,
-      about: req.body.about,
       email: req.body.email,
       password: hash,
     }))
@@ -78,11 +75,10 @@ module.exports.updateAvatar = (req, res, next) => {
 };
 
 module.exports.login = (req, res, next) => {
-  console.log(req.body);
   const { email, password } = req.body;
   return User.findUserByCredentials(email, password)
     .catch(() => {
-      throw new TokenError({ message: `Пользователь с идентификатором ${req.params.id} не найден` });
+      throw new TokenError({ message: `Пользователь с идентификатором ${req.body.email} не найден` });
     })
     .then((user) => {
       const token = jwt.sign(
