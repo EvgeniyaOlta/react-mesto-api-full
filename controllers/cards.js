@@ -21,13 +21,17 @@ module.exports.getAllCards = (req, res, next) => {
 };
 
 module.exports.deleteCard = (req, res, next) => {
+  const currentOwner = req.user._id;
   Card.findByIdAndDelete(req.params._id)
-    .orFail()
-    .then((card) => res.send({ data: card }))
-    .catch(() => {
-      throw new NotFoundError({ message: `Kарточка с идентификатором ${req.params.id} не найдена` });
+    .then((card) => {
+      if (card.owner !== currentOwner) {
+        throw new BadRequestError({ message: 'Необходима авторизация' });
+      }
+      if (!card) {
+        throw new NotFoundError({ message: `Kарточка с идентификатором ${req.params.id} не найдена` });
+      }
+      res.send({ data: card });
     })
-    .then((card) => res.send({ data: card }))
     .catch(next);
 };
 

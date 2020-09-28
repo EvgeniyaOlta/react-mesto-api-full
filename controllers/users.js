@@ -36,7 +36,7 @@ module.exports.createUser = (req, res, next) => {
 
 module.exports.updateUser = (req, res, next) => {
   const { name, about } = req.body;
-
+  const currentOwner = req.user._id;
   User.findByIdAndUpdate(req.user._id,
     { name, about },
     {
@@ -50,7 +50,12 @@ module.exports.updateUser = (req, res, next) => {
       }
       throw new BadRequestError({ message: `Запрос некорректен: ${err.message}` });
     })
-    .then((updatedUser) => res.send({ data: updatedUser }))
+    .then((updatedUser) => {
+      if (currentOwner !== updatedUser._id) {
+        throw new BadRequestError({ message: 'Запрос некорректен' });
+      }
+      res.send({ data: updatedUser });
+    })
     .catch(next);
 };
 
