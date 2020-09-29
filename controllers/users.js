@@ -4,6 +4,7 @@ const User = require('../models/user');
 const BadRequestError = require('../errors/BadRequestError');
 const NotFoundError = require('../errors/NotFoundError');
 const TokenError = require('../errors/TokenError');
+const ConflictError = require('../errors/ConflictError');
 
 module.exports.getAllUsers = (req, res, next) => {
   User.find({})
@@ -26,11 +27,27 @@ module.exports.createUser = (req, res, next) => {
     .then((hash) => User.create({
       email: req.body.email,
       password: hash,
+      name: req.body.name ? req.body.name : undefined,
+      avatar: req.body.avatar ? req.body.avatar : undefined,
+      about: req.body.about ? req.body.about : undefined,
     }))
     .catch((err) => {
+      if (err.name === 'MongoError') {
+        throw new ConflictError({ message: 'Пользователь с таким email уже существует' });
+      }
       throw new BadRequestError({ message: `Запрос некорректен: ${err.message}` });
     })
-    .then((user) => res.send({ data: user }))
+    .then((user) => {
+      res.send({
+        data: {
+          _id: user._id,
+          email: user.email,
+          name: user.name ? user.name : undefined,
+          avatar: user.avatar ? user.avatar : undefined,
+          about: user.about ? user.about : undefined,
+        },
+      });
+    })
     .catch(next);
 };
 
