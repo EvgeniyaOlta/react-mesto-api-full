@@ -19,8 +19,22 @@ cardsRouter.post('/', celebrate({
   }),
 }), createCard);
 
-cardsRouter.delete('/:_id', deleteCard);
-cardsRouter.put('/:_id/likes', likeCard);
-cardsRouter.delete('/:_id/likes', dislikeCard);
+cardsRouter.delete('/:_id', celebrate({
+  body: Joi.object().keys({
+    _id: Joi.string().alphanum().length(24).hex(),
+  }),
+}), deleteCard);
+
+cardsRouter.put('/:_id/likes', celebrate({
+  body: Joi.object().keys({
+    _id: Joi.string().alphanum().length(24).hex(),
+  }),
+}), likeCard);
+
+cardsRouter.delete('/:_id/likes', celebrate({
+  body: Joi.object().keys({
+    _id: Joi.string().alphanum().length(24).hex(),
+  }),
+}), dislikeCard);
 
 module.exports = cardsRouter;

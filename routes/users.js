@@ -8,7 +8,12 @@ const {
 } = require('../controllers/users');
 
 router.get('/', getAllUsers);
-router.get('/:_id', getUser);
+
+router.get('/:_id', celebrate({
+  body: Joi.object().keys({
+    _id: Joi.string().required(),
+  }),
+}), getUser);
 
 router.patch('/me', celebrate({
   body: Joi.object().keys({

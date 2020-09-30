@@ -1,6 +1,7 @@
 const Card = require('../models/card');
 const BadRequestError = require('../errors/BadRequestError');
 const NotFoundError = require('../errors/NotFoundError');
+const DeleteCardError = require('../errors/DeleteCardError');
 
 module.exports.createCard = (req, res, next) => {
   const { name, link } = req.body;
@@ -25,7 +26,7 @@ module.exports.deleteCard = (req, res, next) => {
   Card.findByIdAndDelete(req.params._id)
     .then((card) => {
       if (card.owner !== currentOwner) {
-        throw new BadRequestError({ message: 'Необходима авторизация' });
+        throw new DeleteCardError({ message: 'Запрос некорректен: недостаточно прав' });
       }
       if (!card) {
         throw new NotFoundError({ message: `Kарточка с идентификатором ${req.params.id} не найдена` });
